@@ -1,0 +1,116 @@
+local Duping, DupeAmount = false, 8
+
+local Dupe = function(Amount)
+    UI.Notify:new('Dupe', ('Amount: %s'):format(Amount))
+
+    Duping = true
+
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Humanoid = WaitForChild(Character, 'Humanoid', 10)
+
+    if not Humanoid then
+        return UI.Notify:new('Warning', 'No compatible humanoid found.')
+    end
+
+    local Root = WaitForChild(Character, 'HumanoidRootPart', 10)
+
+    if not Root then
+        return UI.Notify:new('Warning', 'No root found.')
+    end
+
+    do
+        local FoundTools = {}
+        Humanoid:UnequipTools()
+
+        for _, Tool in next, LocalPlayer.Backpack:GetChildren() do
+            if Tool.Name:lower():match('boombox') then
+                table.insert(FoundTools, Tool)
+            end
+        end
+
+        if #FoundTools < 1 then
+            return UI.Notify:new('Error', 'You do not have any compatible tools to dupe.')
+        end
+    end
+
+    local FoundTools = {}
+
+    local RCF = Root.CFrame
+
+    local GrabTool = function(Tool)
+        Tool.Handle.Anchored = false
+
+        Tool.Handle.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+
+        pcall(firetouchinterest, Root, Tool.Handle, 0)
+    end
+
+    for IDX = 1, Amount do
+        if not Duping then
+            break
+        end
+
+        local CCF = CFrame.new(NextInt(Rand, -2e4, 2e4), 2e4, NextInt(Rand, -2e4, 2e4))
+
+        wait(.2)
+
+        Root.CFrame = CCF
+
+        wait(.2)
+
+        Root.Anchored = true
+        
+        wait(.2)
+
+        for _, Tool in next, LocalPlayer.Backpack:GetChildren() do
+            if Tool.Name:lower():match'boombox' then
+                Tool.Parent = Character
+                Tool.Handle.Anchored = true
+                table.insert(FoundTools, Tool)
+            end
+        end
+
+        wait(.2)
+
+        for I = 1, #FoundTools do
+            Root.CFrame = Root.CFrame
+            FoundTools[I].Parent = workspace
+        end
+
+        wait(.2)
+
+        Character:BreakJoints()
+
+        Character = LocalPlayer.CharacterAdded:Wait()
+        LocalPlayer.CharacterAppearanceLoaded:Wait()
+
+        Root = WaitForChild(Character, 'HumanoidRootPart')
+        Humanoid = WaitForChild(Character, 'Humanoid')
+    end
+
+    UI.Notify:new('Dupe complete.', ('Finished with %s tools. %s of them were stolen.'):format(#FoundTools, (function() 
+        local StolenTools = 0
+        
+        for _, Tool in next, FoundTools do
+            if Tool.Parent ~= workspace and Tool.Parent ~= Character and Tool.Parent ~= LocalPlayer.Backpack then
+                StolenTools = StolenTools + 1
+            end
+        end
+
+        if StolenTools == #FoundTools then
+            return 'All'
+        end
+
+        if StolenTools == 0 then
+            return 'None'
+        end
+
+        return tostring(StolenTools)
+    end)()))
+
+    for _, Tool in next, FoundTools do
+        GrabTool(Tool)
+    end
+
+    Root.CFrame = RCF
+end
